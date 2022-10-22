@@ -1,0 +1,4 @@
+Ideas
+
+Get the list of potential moves more efficiently
+Run MCS in parallel
