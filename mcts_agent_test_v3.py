@@ -65,14 +65,40 @@ def list_contains(l1, l2):
 N = 1000
 K = 10
 
+
 def get_best_move():
 	logDebug("Get best move")
 	logDebug(format_board(board))
 	# determine the list of valid moves
 	validMoves = get_connected_moves()
 
+	"""
+	# check if we need to block opponent from winning
+	fiveLine = [1, 1, 1, 1, 1]
+	logDebug("Block patterns")
+	logDebug(format_board(board))
+	for x, y in validMoves:
+		logDebug(str(x) + ", " + str(y))
+		board[x][y] = 2
+		allPatterns = []
+		# horizontal line
+		allPatterns.append([position_val_oppo(x, y+i-4) for i in range(0, LENGTH)])
+		# vertical line
+		allPatterns.append([position_val_oppo(x+i-4, y) for i in range(0, LENGTH)])
+		# diagonal line \
+		allPatterns.append([position_val_oppo(x+i-4, y+i-4) for i in range(0, LENGTH)])
+		# diagonal line /
+		allPatterns.append([position_val_oppo(x+i-4, y-i+4) for i in range(0, LENGTH)])
+		board[x][y] = 0
+		logDebug(format_list(allPatterns))
+
+		for pattern in allPatterns:
+			if list_contains(pattern, fiveLine):
+				return (x, y)
+	"""
 	gamesCount = [[0 for i in range(LENGTH)] for j in range(LENGTH)]
 	score = [[0 for i in range(LENGTH)] for j in range(LENGTH)]
+	lastTime = time.time()
 	for nSim in range(0, N):
 		logDebug("positionB")
 		curX, curY = get_explore_move(score, gamesCount, validMoves)
@@ -88,7 +114,16 @@ def get_best_move():
 			logDebug('Trial ' + str(nSim))
 			logDebug(format_board(score))
 			logDebug(format_board(gamesCount))
+			if False:
+				print()
+				print(format_board(score))
+				print()
+				print(format_board(gamesCount))
+				print(time.time() - lastTime)
+				print("==============================================")
+			lastTime = time.time()
 
+	logDebug("find best")
 	maxVal = 0
 	bestMove = (0, 0)
 	for i in range(LENGTH):
@@ -108,7 +143,7 @@ def get_connected_moves():
 		for y in range(0, LENGTH):
 			if is_free(x, y) and is_connected(x, y):
 				validMoves.add((x, y))
-	
+	logDebug(str(validMoves))
 	if not validMoves:
 		logDebug("no valid moves")
 		# assume this is because no piece on board
@@ -121,9 +156,13 @@ def get_connected_moves():
 def get_explore_move(score, gamesCount, validMoves):
 	totalGames = sum([sum(c) for c in gamesCount])
 	max = -2
+	# logDebug("total games " + str(totalGames))
 	for x, y in validMoves:
+		# logDebug("explore " + str(x) + str(y))
+		# logDebug("count " + str(gamesCount[x][y]))
 		# explore every move at least once
 		if gamesCount[x][y] == 0:
+			# logDebug("return " + str(x) + str(y))
 			return x, y
 		ucbi = score[x][y] / gamesCount[x][y] + math.sqrt(2 * math.log(totalGames) / gamesCount[x][y])
 		if ucbi > max:
@@ -134,12 +173,15 @@ def get_explore_move(score, gamesCount, validMoves):
 
 
 def tree_search(player, depth):
+	# logDebug("tree search")
 	lastTime = time.time()
 	if depth > K:
 		logDebug("Game finished at depth " + str(depth))
+		# print("Game finished at depth ", depth)
 		return 0.1
 
 	x, y = get_next_move()
+	# logDebug("next move " + str(x) + str(y))
 	if TIME:
 		newTime = time.time()
 		print('Get new moves time {}'.format(newTime - lastTime))
@@ -201,13 +243,17 @@ def is_game_over(x, y, player):
 		i += 1
 		c4 += 1
 
+	# logDebug("is game over")
 	return c1 >= 5 or c2 >= 5 or c3 >= 5 or c4 >= 5
 
 
 # This is our play policy
+# TODO: improve upon policy using DQN
 def get_next_move():
 	#logDebug("get next move")
 	for i in range(0, LENGTH * LENGTH * 3):
+		#if i % 20 == 19:
+		#	logDebug("Tried i positions")
 		x = random.randint(0, LENGTH - 1)
 		y = random.randint(0, LENGTH - 1)
 
@@ -220,6 +266,7 @@ def get_next_move():
 
 def format_board(board):
 	return format_list(r[0:pp.height] for r in board[0:pp.width])
+
 
 def format_list(board):
 	return '\n'.join([' '.join(str(round(s, 2)) for s in row) for row in board])
@@ -358,6 +405,20 @@ DEBUG = False
 def main():
 	if DEBUG:
 		global board
+		"""
+		board = [
+			[0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 1, 0, 1, 1, 2, 0, 0],
+			[0, 1, 0, 2, 0, 2, 0, 0, 0],
+			[0, 1, 0, 1, 0, 0, 0, 0, 0],
+			[0, 1, 1, 2, 2, 0, 0, 0, 0],
+			[0, 1, 2, 1, 1, 2, 0, 0, 0],
+			[0, 1, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 1, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0, 0]
+		]
+		print(is_game_over(3, 4, 1))
+		"""
 		pp.width = 9
 		pp.height = 9
 		board =[
